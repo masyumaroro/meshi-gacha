@@ -1,0 +1,18 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.scratch
+
+# Common heavy folders (Safety net)
+**/node_modules/
+**/target/
+**/dist/
+**/build/
+
+# Logs
+*.log
