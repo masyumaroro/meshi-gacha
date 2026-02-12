@@ -2,10 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, RefreshCw, ExternalLink } from 'lucide-react';
 
-// --- 【ここを書き換えました！】 ---
-// あなたのバックエンドのURLを指定
 const API_BASE_URL = "https://meshi-gacha.onrender.com";
-// ------------------------------
 
 interface Food {
   name: string;
@@ -27,11 +24,22 @@ export default function App() {
 
   const dummyFoods = ["ラーメン", "カレー", "パスタ", "牛丼", "寿司", "焼肉", "うどん", "ピザ", "そば", "ハンバーグ"];
 
+  // --- 【変更点1】トグル（選択解除）用の関数 ---
+  const toggleTaste = (taste: Taste) => {
+    setSelectedTaste(selectedTaste === taste ? null : taste);
+  };
+
+  const toggleType = (type: MealType) => {
+    setSelectedType(selectedType === type ? null : type);
+  };
+
   const spinGacha = async () => {
     setIsSpinning(true);
     setCurrentMeal(null);
 
     const params = new URLSearchParams();
+    
+    // --- 【変更点2】選択されている時だけパラメータを追加 ---
     if (selectedTaste === 'あっさり') params.append('heaviness', '1');
     if (selectedTaste === 'こってり') params.append('heaviness', '5');
     
@@ -40,7 +48,6 @@ export default function App() {
     if (selectedType === '外食') params.append('sourceType', 'EAT_OUT');
 
     try {
-      // 【重要】localhostではなく、API_BASE_URL（Render）にリクエストを送る
       const response = await fetch(`${API_BASE_URL}/api/foods/gacha?${params.toString()}`);
       if (!response.ok) throw new Error();
       const finalResult = await response.json();
@@ -58,7 +65,7 @@ export default function App() {
       }, 80);
 
     } catch (error) {
-      alert('通信に失敗したか、条件に合う料理が見つかりませんでした！');
+      alert('条件に合う料理が見つかりませんでした！');
       setIsSpinning(false);
     }
   };
@@ -80,29 +87,28 @@ export default function App() {
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-pink-50 p-6 font-sans text-gray-800">
       <div className="max-w-2xl mx-auto">
         
-        {/* Header */}
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
           <h1 className="text-6xl font-black text-orange-600 mb-4 drop-shadow-md">🍱 飯ガチャ</h1>
           <p className="text-gray-500 font-medium text-lg">今日のご飯、迷ったらJavaに聞け！</p>
         </motion.div>
 
-        {/* Settings Card */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white/70 backdrop-blur-md rounded-3xl shadow-2xl p-8 mb-8 border border-white">
           <div className="space-y-8">
             <div>
-              <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-orange-500">🌟 味の好み</h2>
+              <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-orange-500">🌟 味の好み（選ばなくてもOK）</h2>
               <div className="flex gap-3">
-                <FilterChip label="あっさり" isActive={selectedTaste === 'あっさり'} onClick={() => setSelectedTaste('あっさり')} />
-                <FilterChip label="こってり" isActive={selectedTaste === 'こってり'} onClick={() => setSelectedTaste('こってり')} />
+                {/* --- 【変更点3】toggle関数を呼ぶように修正 --- */}
+                <FilterChip label="あっさり" isActive={selectedTaste === 'あっさり'} onClick={() => toggleTaste('あっさり')} />
+                <FilterChip label="こってり" isActive={selectedTaste === 'こってり'} onClick={() => toggleTaste('こってり')} />
               </div>
             </div>
 
             <div>
-              <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-blue-500">📍 食事タイプ</h2>
+              <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-blue-500">📍 食事タイプ（選ばなくてもOK）</h2>
               <div className="flex gap-3">
-                <FilterChip label="自炊" isActive={selectedType === '自炊'} onClick={() => setSelectedType('自炊')} />
-                <FilterChip label="外食" isActive={selectedType === '外食'} onClick={() => setSelectedType('外食')} />
-                <FilterChip label="コンビニ" isActive={selectedType === 'コンビニ'} onClick={() => setSelectedType('コンビニ')} />
+                <FilterChip label="自炊" isActive={selectedType === '自炊'} onClick={() => toggleType('自炊')} />
+                <FilterChip label="外食" isActive={selectedType === '外食'} onClick={() => toggleType('外食')} />
+                <FilterChip label="コンビニ" isActive={selectedType === 'コンビニ'} onClick={() => toggleType('コンビニ')} />
               </div>
             </div>
 
@@ -119,7 +125,6 @@ export default function App() {
           </div>
         </motion.div>
 
-        {/* Result Display */}
         <AnimatePresence mode="wait">
           {(isSpinning || currentMeal) && (
             <motion.div
@@ -157,7 +162,10 @@ export default function App() {
 
                   <div className="flex gap-3 justify-center">
                     <span className="px-5 py-2 bg-orange-100 text-orange-600 rounded-full font-bold">#{currentMeal.category}</span>
-                    <span className="px-5 py-2 bg-blue-100 text-blue-600 rounded-full font-bold">#{selectedType}</span>
+                    {/* selectedTypeがnullの場合はタグを表示しない工夫 */}
+                    {selectedType && (
+                      <span className="px-5 py-2 bg-blue-100 text-blue-600 rounded-full font-bold">#{selectedType}</span>
+                    )}
                   </div>
                 </>
               )}
