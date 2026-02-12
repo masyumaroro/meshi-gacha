@@ -1,9 +1,10 @@
 package com.example.demo.controller;
 
-import com.example.demo.entity.Food;
-import com.example.demo.foodRepository.FoodfoodRepository;
+import com.example.demo.entity.Food; // Food.javaがある場所
+import com.example.demo.repository.FoodRepository; // ここがくっついていないか確認
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import java.util.ArrayList;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -12,36 +13,34 @@ import java.util.List;
 @CrossOrigin(origins = "*")
 public class FoodController {
 
-    private final FoodfoodRepository foodfoodRepository;
+    @Autowired
+    private FoodRepository foodRepository; // 修正ポイント：FoodRepository(型) と foodRepository(名前)
 
-    public FoodController(FoodfoodRepository foodfoodRepository) {
-        this.foodfoodRepository = foodfoodRepository;
-    }
-
-   @GetMapping("/gacha")
+    @GetMapping("/gacha")
     public Food getGacha(
-    @RequestParam(required = false) Integer heaviness, // required = false で「選ばなくてもOK」に
-    @RequestParam(required = false) String sourceType
+            @RequestParam(required = false) Integer heaviness,
+            @RequestParam(required = false) String sourceType
     ) {
-    List<Food> allFoods;
-    // 条件に合わせて検索（条件がない場合は全件取得）
-    if (heaviness != null && sourceType != null) {
-        allFoods = foodRepository.findByHeavinessAndSourceType(heaviness, sourceType);
-    } else if (heaviness != null) {
-        allFoods = foodRepository.findByHeaviness(heaviness);
-    } else if (sourceType != null) {
-        allFoods = foodRepository.findBySourceType(sourceType);
-    } else {
-        allFoods = foodRepository.findAll();
+        List<Food> allFoods;
+
+        // 条件に合わせて「リスト」で取得する
+        if (heaviness != null && sourceType != null) {
+            allFoods = foodRepository.findByHeavinessAndSourceType(heaviness, sourceType);
+        } else if (heaviness != null) {
+            allFoods = foodRepository.findByHeaviness(heaviness);
+        } else if (sourceType != null) {
+            allFoods = foodRepository.findBySourceType(sourceType);
+        } else {
+            allFoods = foodRepository.findAll();
+        }
+
+        // リストが空ならnullを返す
+        if (allFoods == null || allFoods.isEmpty()) {
+            return null;
+        }
+
+        // 【重要】ここで中身をシャッフルして「ランダム」にする
+        Collections.shuffle(allFoods);
+        return allFoods.get(0);
     }
-
-    if (allFoods.isEmpty()) {
-        return null; // またはエラー用のFoodオブジェクト
-    }
-
-    // 【重要】リストをシャッフルして、その中の「0番目」を返すことでランダムにする！
-    Collections.shuffle(allFoods);
-    return allFoods.get(0);
-}
-
 }
