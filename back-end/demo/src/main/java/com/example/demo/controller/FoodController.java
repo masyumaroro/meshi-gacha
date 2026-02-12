@@ -18,24 +18,30 @@ public class FoodController {
         this.foodRepository = foodRepository;
     }
 
-    @GetMapping("/gacha")
-    public Food getRandomFood(
-            @RequestParam(required = false) Integer heaviness,
-            @RequestParam(required = false) String sourceType
+   @GetMapping("/gacha")
+    public Food getGacha(
+    @RequestParam(required = false) Integer heaviness, // required = false で「選ばなくてもOK」に
+    @RequestParam(required = false) String sourceType
     ) {
-        List<Food> allFoods = foodRepository.findAll();
-
-        List<Food> filteredFoods = allFoods.stream()
-            .filter(f -> heaviness == null || f.getHeaviness() == heaviness)
-            .filter(f -> sourceType == null || f.getSourceType().equals(sourceType))
-            .toList();
-
-        if (filteredFoods.isEmpty()) {
-            return null;
-        }
-
-        List<Food> mutableList = new ArrayList<>(filteredFoods);
-        Collections.shuffle(mutableList);
-        return mutableList.get(0);
+    List<Food> allFoods;
+    // 条件に合わせて検索（条件がない場合は全件取得）
+    if (heaviness != null && sourceType != null) {
+        allFoods = repository.findByHeavinessAndSourceType(heaviness, sourceType);
+    } else if (heaviness != null) {
+        allFoods = repository.findByHeaviness(heaviness);
+    } else if (sourceType != null) {
+        allFoods = repository.findBySourceType(sourceType);
+    } else {
+        allFoods = repository.findAll();
     }
+
+    if (allFoods.isEmpty()) {
+        return null; // またはエラー用のFoodオブジェクト
+    }
+
+    // 【重要】リストをシャッフルして、その中の「0番目」を返すことでランダムにする！
+    Collections.shuffle(allFoods);
+    return allFoods.get(0);
+}
+
 }
