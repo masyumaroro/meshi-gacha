@@ -1,7 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.entity.Food;
-import com.example.demo.repository.FoodRepository;
+import com.example.demo.foodRepository.FoodfoodRepository;
 import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,10 +12,10 @@ import java.util.List;
 @CrossOrigin(origins = "*")
 public class FoodController {
 
-    private final FoodRepository foodRepository;
+    private final FoodfoodRepository foodfoodRepository;
 
-    public FoodController(FoodRepository foodRepository) {
-        this.foodRepository = foodRepository;
+    public FoodController(FoodfoodRepository foodfoodRepository) {
+        this.foodfoodRepository = foodfoodRepository;
     }
 
    @GetMapping("/gacha")
@@ -26,13 +26,13 @@ public class FoodController {
     List<Food> allFoods;
     // 条件に合わせて検索（条件がない場合は全件取得）
     if (heaviness != null && sourceType != null) {
-        allFoods = repository.findByHeavinessAndSourceType(heaviness, sourceType);
+        allFoods = foodRepository.findByHeavinessAndSourceType(heaviness, sourceType);
     } else if (heaviness != null) {
-        allFoods = repository.findByHeaviness(heaviness);
+        allFoods = foodRepository.findByHeaviness(heaviness);
     } else if (sourceType != null) {
-        allFoods = repository.findBySourceType(sourceType);
+        allFoods = foodRepository.findBySourceType(sourceType);
     } else {
-        allFoods = repository.findAll();
+        allFoods = foodRepository.findAll();
     }
 
     if (allFoods.isEmpty()) {
