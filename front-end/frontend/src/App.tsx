@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import './App.css'
+import './index.css' // ← ここで Tailwind を書いたファイルを読み込む
 
-// --- 【ここを書き換えました！】 ---
 // あなたのバックエンドのURLを指定します
 const API_BASE_URL = "https://meshi-gacha.onrender.com";
 
