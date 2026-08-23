@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ExternalLink, RefreshCw } from 'lucide-react';
+import { ExternalLink, RefreshCw, Shuffle } from 'lucide-react';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 
@@ -12,15 +12,8 @@ interface Food {
   recipeUrl: string | null;
 }
 
+type Taste = 'あっさり' | 'こってり';
 type MealType = '自炊' | '外食' | 'コンビニ';
-
-const HEAVINESS_LABELS: Record<number, string> = {
-  1: 'あっさり',
-  2: 'やや軽め',
-  3: '普通',
-  4: 'やや重め',
-  5: 'こってり',
-};
 
 const SOURCE_TYPE_MAP: Record<MealType, string> = {
   '自炊': 'COOKING',
@@ -29,7 +22,7 @@ const SOURCE_TYPE_MAP: Record<MealType, string> = {
 };
 
 export default function App() {
-  const [heaviness, setHeaviness] = useState<number | null>(null);
+  const [selectedTaste, setSelectedTaste] = useState<Taste | null>(null);
   const [selectedType, setSelectedType] = useState<MealType | null>(null);
   const [currentMeal, setCurrentMeal] = useState<Food | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -42,9 +35,12 @@ export default function App() {
     setCurrentMeal(null);
 
     const params = new URLSearchParams();
-    if (heaviness !== null) {
-      params.append('heavinessMin', String(heaviness));
-      params.append('heavinessMax', String(heaviness));
+    if (selectedTaste === 'あっさり') {
+      params.append('heavinessMin', '1');
+      params.append('heavinessMax', '2');
+    } else if (selectedTaste === 'こってり') {
+      params.append('heavinessMin', '4');
+      params.append('heavinessMax', '5');
     }
     if (selectedType) params.append('sourceType', SOURCE_TYPE_MAP[selectedType]);
 
@@ -73,13 +69,13 @@ export default function App() {
     }
   };
 
-  const TypeChip = ({ label }: { label: MealType }) => (
+  const FilterButton = ({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) => (
     <button
-      onClick={() => setSelectedType(selectedType === label ? null : label)}
-      className={`px-5 py-2 rounded-full text-sm font-medium border transition-all ${
-        selectedType === label
-          ? 'bg-green-800 text-stone-50 border-green-800'
-          : 'bg-transparent text-stone-500 border-stone-300 hover:border-green-800 hover:text-green-800'
+      onClick={onClick}
+      className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all duration-200 ${
+        active
+          ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200'
+          : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600'
       }`}
     >
       {label}
@@ -87,86 +83,75 @@ export default function App() {
   );
 
   return (
-    <div className="min-h-screen bg-stone-50 text-stone-800 font-sans">
-      <div className="max-w-lg mx-auto px-6 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-slate-50">
 
-        {/* ヘッダー */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <p className="text-xs tracking-widest text-stone-400 uppercase mb-3">Today's Meal</p>
-          <h1 className="text-5xl font-bold text-green-900 mb-2">飯ガチャ</h1>
-          <div className="w-12 h-px bg-stone-300 mx-auto mt-4" />
-        </motion.div>
+      {/* ヘッダー */}
+      <div className="bg-white border-b border-slate-100 shadow-sm">
+        <div className="max-w-md mx-auto px-6 py-5 flex items-center gap-3">
+          <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-md shadow-blue-200">
+            <span className="text-lg">🍱</span>
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-slate-800 leading-none">飯ガチャ</h1>
+            <p className="text-xs text-slate-400 mt-0.5">今日のご飯をランダムで決定</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-md mx-auto px-6 py-8 space-y-4">
 
         {/* フィルターカード */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white border border-stone-200 rounded-2xl p-6 mb-6 space-y-6"
-        >
-          {/* 味の重さ */}
-          <div>
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-sm font-medium text-stone-600">味の重さ</span>
-              <div className="flex items-center gap-2">
-                <span className={`text-sm ${heaviness !== null ? 'text-green-800 font-medium' : 'text-stone-400'}`}>
-                  {heaviness !== null ? HEAVINESS_LABELS[heaviness] : 'こだわらない'}
-                </span>
-                {heaviness !== null && (
-                  <button
-                    onClick={() => setHeaviness(null)}
-                    className="text-xs text-stone-400 hover:text-stone-600 underline"
-                  >
-                    解除
-                  </button>
-                )}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-50">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">絞り込み</p>
+          </div>
+
+          <div className="px-5 py-4 space-y-5">
+            {/* 味の好み */}
+            <div>
+              <p className="text-sm font-medium text-slate-600 mb-2.5">味の好み</p>
+              <div className="flex gap-2">
+                <FilterButton
+                  label="😌 あっさり"
+                  active={selectedTaste === 'あっさり'}
+                  onClick={() => setSelectedTaste(selectedTaste === 'あっさり' ? null : 'あっさり')}
+                />
+                <FilterButton
+                  label="🔥 こってり"
+                  active={selectedTaste === 'こってり'}
+                  onClick={() => setSelectedTaste(selectedTaste === 'こってり' ? null : 'こってり')}
+                />
               </div>
             </div>
-            <div className="relative">
-              <input
-                type="range"
-                min={1}
-                max={5}
-                step={1}
-                value={heaviness ?? 3}
-                onChange={(e) => setHeaviness(Number(e.target.value))}
-                className="w-full h-1 rounded appearance-none cursor-pointer accent-green-800 bg-stone-200"
-              />
-              <div className="flex justify-between mt-1.5">
-                <span className="text-xs text-stone-400">あっさり</span>
-                <span className="text-xs text-stone-400">こってり</span>
+
+            {/* 食事タイプ */}
+            <div>
+              <p className="text-sm font-medium text-slate-600 mb-2.5">食事タイプ</p>
+              <div className="flex gap-2">
+                {(['自炊', '外食', 'コンビニ'] as MealType[]).map((type) => (
+                  <FilterButton
+                    key={type}
+                    label={type}
+                    active={selectedType === type}
+                    onClick={() => setSelectedType(selectedType === type ? null : type)}
+                  />
+                ))}
               </div>
             </div>
           </div>
-
-          <div className="w-full h-px bg-stone-100" />
-
-          {/* 食事タイプ */}
-          <div>
-            <span className="text-sm font-medium text-stone-600 block mb-3">食事タイプ</span>
-            <div className="flex gap-2">
-              <TypeChip label="自炊" />
-              <TypeChip label="外食" />
-              <TypeChip label="コンビニ" />
-            </div>
-          </div>
-        </motion.div>
+        </div>
 
         {/* ガチャボタン */}
         <motion.button
           onClick={spinGacha}
           disabled={isSpinning}
           whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="w-full py-4 bg-green-800 hover:bg-green-700 text-stone-50 font-bold text-lg rounded-2xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2 mb-8"
+          whileTap={{ scale: 0.97 }}
+          className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-base rounded-2xl shadow-lg shadow-blue-200 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
         >
           {isSpinning
-            ? <><RefreshCw size={20} className="animate-spin" /> 選んでいます…</>
-            : '今日のご飯を決める'
+            ? <><RefreshCw size={18} className="animate-spin" />選んでいます…</>
+            : <><Shuffle size={18} />ガチャを回す</>
           }
         </motion.button>
 
@@ -175,44 +160,53 @@ export default function App() {
           {(isSpinning || currentMeal) && (
             <motion.div
               key={isSpinning ? 'spinning' : currentMeal?.name}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="bg-white border border-stone-200 rounded-2xl p-8 text-center"
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.25 }}
+              className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden"
             >
               {isSpinning ? (
-                <div className="py-8">
-                  <p className="text-4xl mb-4">🍳</p>
-                  <p className="text-2xl font-bold text-stone-400 tracking-wide">{displayText}</p>
+                <div className="px-6 py-12 text-center">
+                  <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <span className="text-3xl animate-bounce">🍳</span>
+                  </div>
+                  <p className="text-2xl font-bold text-blue-600">{displayText}</p>
+                  <p className="text-sm text-slate-400 mt-2">厳選中…</p>
                 </div>
               ) : currentMeal && (
                 <>
-                  <p className="text-xs tracking-widest text-stone-400 uppercase mb-4">Result</p>
-                  <h2 className="text-4xl font-bold text-green-900 mb-4">{currentMeal.name}</h2>
-                  <p className="text-stone-500 leading-relaxed mb-6 max-w-xs mx-auto">
-                    {currentMeal.description}
-                  </p>
+                  <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-5">
+                    <p className="text-blue-200 text-xs font-semibold uppercase tracking-wider mb-1">Today's Pick</p>
+                    <h2 className="text-3xl font-bold text-white">{currentMeal.name}</h2>
+                  </div>
 
-                  {currentMeal.sourceType === 'COOKING' && currentMeal.recipeUrl && (
-                    <a
-                      href={currentMeal.recipeUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-sm text-green-800 hover:text-green-600 underline underline-offset-4 mb-6"
-                    >
-                      レシピを見る <ExternalLink size={14} />
-                    </a>
-                  )}
+                  <div className="px-6 py-5">
+                    <p className="text-slate-600 leading-relaxed mb-5">{currentMeal.description}</p>
 
-                  <div className="flex gap-2 justify-center mt-2">
-                    <span className="text-xs px-3 py-1 bg-stone-100 text-stone-500 rounded-full">
-                      {currentMeal.category}
-                    </span>
-                    {selectedType && (
-                      <span className="text-xs px-3 py-1 bg-stone-100 text-stone-500 rounded-full">
-                        {selectedType}
-                      </span>
-                    )}
+                    <div className="flex items-center justify-between">
+                      <div className="flex gap-1.5">
+                        <span className="text-xs px-2.5 py-1 bg-blue-50 text-blue-600 rounded-full font-medium">
+                          {currentMeal.category}
+                        </span>
+                        {selectedType && (
+                          <span className="text-xs px-2.5 py-1 bg-slate-100 text-slate-500 rounded-full font-medium">
+                            {selectedType}
+                          </span>
+                        )}
+                      </div>
+
+                      {currentMeal.sourceType === 'COOKING' && currentMeal.recipeUrl && (
+                        <a
+                          href={currentMeal.recipeUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                        >
+                          レシピ <ExternalLink size={13} />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </>
               )}
@@ -221,7 +215,7 @@ export default function App() {
         </AnimatePresence>
 
         {!currentMeal && !isSpinning && (
-          <p className="text-center text-stone-400 text-sm mt-4">
+          <p className="text-center text-slate-400 text-sm pt-2">
             条件を選んでボタンを押してください
           </p>
         )}
