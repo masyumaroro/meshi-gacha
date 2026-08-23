@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, RefreshCw, ExternalLink } from 'lucide-react';
+import { ExternalLink, RefreshCw } from 'lucide-react';
 
-const API_BASE_URL = "https://meshi-gacha.onrender.com";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 
 interface Food {
   name: string;
@@ -12,71 +12,74 @@ interface Food {
   recipeUrl: string | null;
 }
 
-type Taste = 'あっさり' | 'こってり';
 type MealType = '自炊' | '外食' | 'コンビニ';
 
+const HEAVINESS_LABELS: Record<number, string> = {
+  1: 'あっさり',
+  2: 'やや軽め',
+  3: '普通',
+  4: 'やや重め',
+  5: 'こってり',
+};
+
+const SOURCE_TYPE_MAP: Record<MealType, string> = {
+  '自炊': 'COOKING',
+  '外食': 'EAT_OUT',
+  'コンビニ': 'CONVENIENCE',
+};
+
 export default function App() {
-  const [selectedTaste, setSelectedTaste] = useState<Taste | null>(null);
+  const [heaviness, setHeaviness] = useState<number | null>(null);
   const [selectedType, setSelectedType] = useState<MealType | null>(null);
   const [currentMeal, setCurrentMeal] = useState<Food | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
-  const [displayText, setDisplayText] = useState("");
+  const [displayText, setDisplayText] = useState('');
 
-  const dummyFoods = ["ラーメン", "カレー", "パスタ", "牛丼", "寿司", "焼肉", "うどん", "ピザ", "そば", "ハンバーグ"];
-
-  // --- 【変更点1】トグル（選択解除）用の関数 ---
-  const toggleTaste = (taste: Taste) => {
-    setSelectedTaste(selectedTaste === taste ? null : taste);
-  };
-
-  const toggleType = (type: MealType) => {
-    setSelectedType(selectedType === type ? null : type);
-  };
+  const dummyFoods = ['ラーメン', 'カレー', 'パスタ', '牛丼', '寿司', '焼肉', 'うどん', 'ピザ', 'そば', 'ハンバーグ'];
 
   const spinGacha = async () => {
     setIsSpinning(true);
     setCurrentMeal(null);
 
     const params = new URLSearchParams();
-    
-    // --- 【変更点2】選択されている時だけパラメータを追加 ---
-    if (selectedTaste === 'あっさり') params.append('heaviness', '1');
-    if (selectedTaste === 'こってり') params.append('heaviness', '5');
-    
-    if (selectedType === '自炊') params.append('sourceType', 'COOKING');
-    if (selectedType === 'コンビニ') params.append('sourceType', 'CONVENIENCE');
-    if (selectedType === '外食') params.append('sourceType', 'EAT_OUT');
+    if (heaviness !== null) {
+      params.append('heavinessMin', String(heaviness));
+      params.append('heavinessMax', String(heaviness));
+    }
+    if (selectedType) params.append('sourceType', SOURCE_TYPE_MAP[selectedType]);
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/foods/gacha?${params.toString()}`);
-      if (!response.ok) throw new Error();
+      if (response.status === 404) throw new Error('not_found');
+      if (!response.ok) throw new Error('server_error');
       const finalResult = await response.json();
 
       let count = 0;
       const interval = setInterval(() => {
         setDisplayText(dummyFoods[Math.floor(Math.random() * dummyFoods.length)]);
         count++;
-
         if (count > 15) {
           clearInterval(interval);
           setCurrentMeal(finalResult);
           setIsSpinning(false);
         }
       }, 80);
-
     } catch (error) {
-      alert('条件に合う料理が見つかりませんでした！');
+      const msg = error instanceof Error && error.message === 'server_error'
+        ? 'サーバーエラーが発生しました。'
+        : '条件に合う料理が見つかりませんでした。';
+      alert(msg);
       setIsSpinning(false);
     }
   };
 
-  const FilterChip = ({ label, isActive, onClick }: { label: string, isActive: boolean, onClick: () => void }) => (
+  const TypeChip = ({ label }: { label: MealType }) => (
     <button
-      onClick={onClick}
-      className={`flex-1 py-3 px-4 rounded-xl font-bold transition-all transform hover:scale-105 ${
-        isActive 
-          ? 'bg-gradient-to-r from-orange-400 to-pink-400 text-white shadow-lg' 
-          : 'bg-white/60 text-gray-600 border border-gray-100 hover:bg-white'
+      onClick={() => setSelectedType(selectedType === label ? null : label)}
+      className={`px-5 py-2 rounded-full text-sm font-medium border transition-all ${
+        selectedType === label
+          ? 'bg-green-800 text-stone-50 border-green-800'
+          : 'bg-transparent text-stone-500 border-stone-300 hover:border-green-800 hover:text-green-800'
       }`}
     >
       {label}
@@ -84,87 +87,131 @@ export default function App() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-pink-50 p-6 font-sans text-gray-800">
-      <div className="max-w-2xl mx-auto">
-        
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
-          <h1 className="text-6xl font-black text-orange-600 mb-4 drop-shadow-md">🍱 飯ガチャ</h1>
-          <p className="text-gray-500 font-medium text-lg">今日のご飯、迷ったらJavaに聞け！</p>
+    <div className="min-h-screen bg-stone-50 text-stone-800 font-sans">
+      <div className="max-w-lg mx-auto px-6 py-12">
+
+        {/* ヘッダー */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-12"
+        >
+          <p className="text-xs tracking-widest text-stone-400 uppercase mb-3">Today's Meal</p>
+          <h1 className="text-5xl font-bold text-green-900 mb-2">飯ガチャ</h1>
+          <div className="w-12 h-px bg-stone-300 mx-auto mt-4" />
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white/70 backdrop-blur-md rounded-3xl shadow-2xl p-8 mb-8 border border-white">
-          <div className="space-y-8">
-            <div>
-              <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-orange-500">🌟 味の好み（選ばなくてもOK）</h2>
-              <div className="flex gap-3">
-                {/* --- 【変更点3】toggle関数を呼ぶように修正 --- */}
-                <FilterChip label="あっさり" isActive={selectedTaste === 'あっさり'} onClick={() => toggleTaste('あっさり')} />
-                <FilterChip label="こってり" isActive={selectedTaste === 'こってり'} onClick={() => toggleTaste('こってり')} />
+        {/* フィルターカード */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white border border-stone-200 rounded-2xl p-6 mb-6 space-y-6"
+        >
+          {/* 味の重さ */}
+          <div>
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-sm font-medium text-stone-600">味の重さ</span>
+              <div className="flex items-center gap-2">
+                <span className={`text-sm ${heaviness !== null ? 'text-green-800 font-medium' : 'text-stone-400'}`}>
+                  {heaviness !== null ? HEAVINESS_LABELS[heaviness] : 'こだわらない'}
+                </span>
+                {heaviness !== null && (
+                  <button
+                    onClick={() => setHeaviness(null)}
+                    className="text-xs text-stone-400 hover:text-stone-600 underline"
+                  >
+                    解除
+                  </button>
+                )}
               </div>
             </div>
-
-            <div>
-              <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-blue-500">📍 食事タイプ（選ばなくてもOK）</h2>
-              <div className="flex gap-3">
-                <FilterChip label="自炊" isActive={selectedType === '自炊'} onClick={() => toggleType('自炊')} />
-                <FilterChip label="外食" isActive={selectedType === '外食'} onClick={() => toggleType('外食')} />
-                <FilterChip label="コンビニ" isActive={selectedType === 'コンビニ'} onClick={() => toggleType('コンビニ')} />
+            <div className="relative">
+              <input
+                type="range"
+                min={1}
+                max={5}
+                step={1}
+                value={heaviness ?? 3}
+                onChange={(e) => setHeaviness(Number(e.target.value))}
+                className="w-full h-1 rounded appearance-none cursor-pointer accent-green-800 bg-stone-200"
+              />
+              <div className="flex justify-between mt-1.5">
+                <span className="text-xs text-stone-400">あっさり</span>
+                <span className="text-xs text-stone-400">こってり</span>
               </div>
             </div>
+          </div>
 
-            <motion.button
-              onClick={spinGacha}
-              disabled={isSpinning}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full py-5 bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 text-white font-black text-2xl rounded-2xl shadow-xl transition-all disabled:opacity-50 flex items-center justify-center gap-3"
-            >
-              {isSpinning ? <RefreshCw className="animate-spin" size={32} /> : <Sparkles size={32} />}
-              {isSpinning ? '厳選中...' : 'ガチャを回す！'}
-            </motion.button>
+          <div className="w-full h-px bg-stone-100" />
+
+          {/* 食事タイプ */}
+          <div>
+            <span className="text-sm font-medium text-stone-600 block mb-3">食事タイプ</span>
+            <div className="flex gap-2">
+              <TypeChip label="自炊" />
+              <TypeChip label="外食" />
+              <TypeChip label="コンビニ" />
+            </div>
           </div>
         </motion.div>
 
+        {/* ガチャボタン */}
+        <motion.button
+          onClick={spinGacha}
+          disabled={isSpinning}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="w-full py-4 bg-green-800 hover:bg-green-700 text-stone-50 font-bold text-lg rounded-2xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2 mb-8"
+        >
+          {isSpinning
+            ? <><RefreshCw size={20} className="animate-spin" /> 選んでいます…</>
+            : '今日のご飯を決める'
+          }
+        </motion.button>
+
+        {/* 結果カード */}
         <AnimatePresence mode="wait">
           {(isSpinning || currentMeal) && (
             <motion.div
-              key={isSpinning ? "spinning" : currentMeal?.name}
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-[3rem] shadow-2xl p-10 text-center border-4 border-orange-200"
+              key={isSpinning ? 'spinning' : currentMeal?.name}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="bg-white border border-stone-200 rounded-2xl p-8 text-center"
             >
               {isSpinning ? (
-                <div className="py-10">
-                  <p className="text-8xl mb-6 animate-bounce">🍳</p>
-                  <h3 className="text-5xl font-black text-orange-400 italic tracking-tighter">{displayText}</h3>
+                <div className="py-8">
+                  <p className="text-4xl mb-4">🍳</p>
+                  <p className="text-2xl font-bold text-stone-400 tracking-wide">{displayText}</p>
                 </div>
               ) : currentMeal && (
                 <>
-                  <div className="text-9xl mb-6">🍱</div>
-                  <h3 className="text-5xl font-black text-gray-800 mb-4">{currentMeal.name}</h3>
-                  <p className="text-gray-500 text-xl font-medium mb-8 leading-relaxed max-w-sm mx-auto">
+                  <p className="text-xs tracking-widest text-stone-400 uppercase mb-4">Result</p>
+                  <h2 className="text-4xl font-bold text-green-900 mb-4">{currentMeal.name}</h2>
+                  <p className="text-stone-500 leading-relaxed mb-6 max-w-xs mx-auto">
                     {currentMeal.description}
                   </p>
 
                   {currentMeal.sourceType === 'COOKING' && currentMeal.recipeUrl && (
-                    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }} className="mb-8">
-                      <a
-                        href={currentMeal.recipeUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-10 rounded-2xl shadow-lg transform transition hover:-translate-y-1"
-                      >
-                        🍳 作り方を見る <ExternalLink size={20} />
-                      </a>
-                    </motion.div>
+                    <a
+                      href={currentMeal.recipeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-sm text-green-800 hover:text-green-600 underline underline-offset-4 mb-6"
+                    >
+                      レシピを見る <ExternalLink size={14} />
+                    </a>
                   )}
 
-                  <div className="flex gap-3 justify-center">
-                    <span className="px-5 py-2 bg-orange-100 text-orange-600 rounded-full font-bold">#{currentMeal.category}</span>
-                    {/* selectedTypeがnullの場合はタグを表示しない工夫 */}
+                  <div className="flex gap-2 justify-center mt-2">
+                    <span className="text-xs px-3 py-1 bg-stone-100 text-stone-500 rounded-full">
+                      {currentMeal.category}
+                    </span>
                     {selectedType && (
-                      <span className="px-5 py-2 bg-blue-100 text-blue-600 rounded-full font-bold">#{selectedType}</span>
+                      <span className="text-xs px-3 py-1 bg-stone-100 text-stone-500 rounded-full">
+                        {selectedType}
+                      </span>
                     )}
                   </div>
                 </>
@@ -174,7 +221,9 @@ export default function App() {
         </AnimatePresence>
 
         {!currentMeal && !isSpinning && (
-          <p className="text-center text-gray-400 font-bold mt-10">条件をセットして、運命のボタンをポチッ！</p>
+          <p className="text-center text-stone-400 text-sm mt-4">
+            条件を選んでボタンを押してください
+          </p>
         )}
       </div>
     </div>

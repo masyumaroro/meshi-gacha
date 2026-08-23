@@ -1,8 +1,9 @@
 package com.example.demo.controller;
 
-import com.example.demo.entity.Food; // Food.javaがある場所
-import com.example.demo.repository.FoodRepository; // ここがくっついていないか確認
+import com.example.demo.entity.Food;
+import com.example.demo.repository.FoodRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
@@ -10,37 +11,37 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/foods")
-@CrossOrigin(origins = "*")
 public class FoodController {
 
     @Autowired
-    private FoodRepository foodRepository; // 修正ポイント：FoodRepository(型) と foodRepository(名前)
+    private FoodRepository foodRepository;
 
     @GetMapping("/gacha")
-    public Food getGacha(
-            @RequestParam(required = false) Integer heaviness,
+    public ResponseEntity<Food> getGacha(
+            @RequestParam(required = false) Integer heavinessMin,
+            @RequestParam(required = false) Integer heavinessMax,
             @RequestParam(required = false) String sourceType
     ) {
-        List<Food> allFoods;
+        boolean hasRange = heavinessMin != null || heavinessMax != null;
+        int min = heavinessMin != null ? heavinessMin : 1;
+        int max = heavinessMax != null ? heavinessMax : 5;
 
-        // 条件に合わせて「リスト」で取得する
-        if (heaviness != null && sourceType != null) {
-            allFoods = foodRepository.findByHeavinessAndSourceType(heaviness, sourceType);
-        } else if (heaviness != null) {
-            allFoods = foodRepository.findByHeaviness(heaviness);
+        List<Food> allFoods;
+        if (hasRange && sourceType != null) {
+            allFoods = foodRepository.findByHeavinessBetweenAndSourceType(min, max, sourceType);
+        } else if (hasRange) {
+            allFoods = foodRepository.findByHeavinessBetween(min, max);
         } else if (sourceType != null) {
             allFoods = foodRepository.findBySourceType(sourceType);
         } else {
             allFoods = foodRepository.findAll();
         }
 
-        // リストが空ならnullを返す
         if (allFoods == null || allFoods.isEmpty()) {
-            return null;
+            return ResponseEntity.notFound().build();
         }
 
-        // 【重要】ここで中身をシャッフルして「ランダム」にする
         Collections.shuffle(allFoods);
-        return allFoods.get(0);
+        return ResponseEntity.ok(allFoods.get(0));
     }
 }
