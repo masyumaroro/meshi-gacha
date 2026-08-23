@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ExternalLink, RefreshCw, Shuffle } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 
@@ -69,13 +69,21 @@ export default function App() {
     }
   };
 
-  const FilterButton = ({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) => (
+  const Chip = ({
+    label,
+    active,
+    onClick,
+  }: {
+    label: string;
+    active: boolean;
+    onClick: () => void;
+  }) => (
     <button
       onClick={onClick}
-      className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all duration-200 ${
+      className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
         active
-          ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200'
-          : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600'
+          ? 'bg-[#0071e3] text-white'
+          : 'bg-[#e8e8ed] text-[#1d1d1f] hover:bg-[#d8d8dd]'
       }`}
     >
       {label}
@@ -83,139 +91,152 @@ export default function App() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-slate-50">
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ backgroundColor: '#f5f5f7', fontFamily: '-apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif' }}
+    >
+      <div className="max-w-md mx-auto w-full px-5 py-12 flex flex-col gap-6">
 
-      {/* ヘッダー */}
-      <div className="bg-white border-b border-slate-100 shadow-sm">
-        <div className="max-w-md mx-auto px-6 py-5 flex items-center gap-3">
-          <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-md shadow-blue-200">
-            <span className="text-lg">🍱</span>
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-slate-800 leading-none">飯ガチャ</h1>
-            <p className="text-xs text-slate-400 mt-0.5">今日のご飯をランダムで決定</p>
-          </div>
-        </div>
-      </div>
+        {/* タイトル */}
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+          className="pt-4"
+        >
+          <h1 style={{ color: '#1d1d1f', fontSize: '2.625rem', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+            飯ガチャ
+          </h1>
+          <p style={{ color: '#6e6e73', fontSize: '1.0625rem', marginTop: '0.375rem' }}>
+            今日のごはんを、運命にゆだねよう。
+          </p>
+        </motion.div>
 
-      <div className="max-w-md mx-auto px-6 py-8 space-y-4">
-
-        {/* フィルターカード */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-50">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">絞り込み</p>
-          </div>
-
-          <div className="px-5 py-4 space-y-5">
-            {/* 味の好み */}
-            <div>
-              <p className="text-sm font-medium text-slate-600 mb-2.5">味の好み</p>
-              <div className="flex gap-2">
-                <FilterButton
-                  label="😌 あっさり"
-                  active={selectedTaste === 'あっさり'}
-                  onClick={() => setSelectedTaste(selectedTaste === 'あっさり' ? null : 'あっさり')}
-                />
-                <FilterButton
-                  label="🔥 こってり"
-                  active={selectedTaste === 'こってり'}
-                  onClick={() => setSelectedTaste(selectedTaste === 'こってり' ? null : 'こってり')}
-                />
-              </div>
-            </div>
-
-            {/* 食事タイプ */}
-            <div>
-              <p className="text-sm font-medium text-slate-600 mb-2.5">食事タイプ</p>
-              <div className="flex gap-2">
-                {(['自炊', '外食', 'コンビニ'] as MealType[]).map((type) => (
-                  <FilterButton
-                    key={type}
-                    label={type}
-                    active={selectedType === type}
-                    onClick={() => setSelectedType(selectedType === type ? null : type)}
-                  />
-                ))}
-              </div>
+        {/* フィルター */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: 'easeOut', delay: 0.05 }}
+          className="rounded-2xl overflow-hidden"
+          style={{ backgroundColor: '#ffffff' }}
+        >
+          {/* 味の好み */}
+          <div className="px-5 py-4">
+            <p style={{ color: '#6e6e73', fontSize: '0.8125rem', fontWeight: 600, letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.625rem' }}>
+              味の好み
+            </p>
+            <div className="flex gap-2">
+              <Chip label="あっさり" active={selectedTaste === 'あっさり'} onClick={() => setSelectedTaste(selectedTaste === 'あっさり' ? null : 'あっさり')} />
+              <Chip label="こってり" active={selectedTaste === 'こってり'} onClick={() => setSelectedTaste(selectedTaste === 'こってり' ? null : 'こってり')} />
             </div>
           </div>
-        </div>
 
-        {/* ガチャボタン */}
+          <div style={{ height: '1px', backgroundColor: '#f2f2f7', margin: '0 20px' }} />
+
+          {/* 食事タイプ */}
+          <div className="px-5 py-4">
+            <p style={{ color: '#6e6e73', fontSize: '0.8125rem', fontWeight: 600, letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.625rem' }}>
+              食事タイプ
+            </p>
+            <div className="flex gap-2">
+              {(['自炊', '外食', 'コンビニ'] as MealType[]).map((type) => (
+                <Chip
+                  key={type}
+                  label={type}
+                  active={selectedType === type}
+                  onClick={() => setSelectedType(selectedType === type ? null : type)}
+                />
+              ))}
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ボタン */}
         <motion.button
           onClick={spinGacha}
           disabled={isSpinning}
-          whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
-          className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-base rounded-2xl shadow-lg shadow-blue-200 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+          transition={{ duration: 0.1 }}
+          className="w-full py-4 rounded-2xl font-semibold text-white text-base transition-opacity disabled:opacity-50"
+          style={{ backgroundColor: '#0071e3', letterSpacing: '-0.01em' }}
         >
-          {isSpinning
-            ? <><RefreshCw size={18} className="animate-spin" />選んでいます…</>
-            : <><Shuffle size={18} />ガチャを回す</>
-          }
+          {isSpinning ? '選んでいます…' : '今日のご飯を決める'}
         </motion.button>
 
-        {/* 結果カード */}
+        {/* 結果 */}
         <AnimatePresence mode="wait">
           {(isSpinning || currentMeal) && (
             <motion.div
               key={isSpinning ? 'spinning' : currentMeal?.name}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25 }}
-              className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden"
+              initial={{ opacity: 0, y: 12, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.98 }}
+              transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+              className="rounded-2xl overflow-hidden"
+              style={{ backgroundColor: '#ffffff' }}
             >
               {isSpinning ? (
-                <div className="px-6 py-12 text-center">
-                  <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <span className="text-3xl animate-bounce">🍳</span>
-                  </div>
-                  <p className="text-2xl font-bold text-blue-600">{displayText}</p>
-                  <p className="text-sm text-slate-400 mt-2">厳選中…</p>
+                <div className="px-6 py-14 text-center">
+                  <p
+                    className="text-3xl font-bold"
+                    style={{ color: '#1d1d1f', letterSpacing: '-0.02em', fontFamily: 'inherit' }}
+                  >
+                    {displayText}
+                  </p>
+                  <p style={{ color: '#6e6e73', fontSize: '0.9375rem', marginTop: '0.5rem' }}>選んでいます…</p>
                 </div>
               ) : currentMeal && (
-                <>
-                  <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-5">
-                    <p className="text-blue-200 text-xs font-semibold uppercase tracking-wider mb-1">Today's Pick</p>
-                    <h2 className="text-3xl font-bold text-white">{currentMeal.name}</h2>
-                  </div>
+                <div className="px-6 py-6">
+                  <p style={{ color: '#6e6e73', fontSize: '0.8125rem', fontWeight: 600, letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+                    Today's Pick
+                  </p>
+                  <h2
+                    style={{ color: '#1d1d1f', fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.15, marginBottom: '0.75rem' }}
+                  >
+                    {currentMeal.name}
+                  </h2>
+                  <p style={{ color: '#6e6e73', fontSize: '0.9375rem', lineHeight: 1.6, marginBottom: '1.25rem' }}>
+                    {currentMeal.description}
+                  </p>
 
-                  <div className="px-6 py-5">
-                    <p className="text-slate-600 leading-relaxed mb-5">{currentMeal.description}</p>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex gap-1.5">
-                        <span className="text-xs px-2.5 py-1 bg-blue-50 text-blue-600 rounded-full font-medium">
-                          {currentMeal.category}
-                        </span>
-                        {selectedType && (
-                          <span className="text-xs px-2.5 py-1 bg-slate-100 text-slate-500 rounded-full font-medium">
-                            {selectedType}
-                          </span>
-                        )}
-                      </div>
-
-                      {currentMeal.sourceType === 'COOKING' && currentMeal.recipeUrl && (
-                        <a
-                          href={currentMeal.recipeUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                  <div className="flex items-center justify-between">
+                    <div className="flex gap-1.5">
+                      <span
+                        className="px-3 py-1 rounded-full text-xs font-medium"
+                        style={{ backgroundColor: '#f2f2f7', color: '#6e6e73' }}
+                      >
+                        {currentMeal.category}
+                      </span>
+                      {selectedType && (
+                        <span
+                          className="px-3 py-1 rounded-full text-xs font-medium"
+                          style={{ backgroundColor: '#f2f2f7', color: '#6e6e73' }}
                         >
-                          レシピ <ExternalLink size={13} />
-                        </a>
+                          {selectedType}
+                        </span>
                       )}
                     </div>
+
+                    {currentMeal.sourceType === 'COOKING' && currentMeal.recipeUrl && (
+                      <a
+                        href={currentMeal.recipeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-sm font-medium transition-opacity hover:opacity-70"
+                        style={{ color: '#0071e3' }}
+                      >
+                        レシピを見る <ExternalLink size={13} />
+                      </a>
+                    )}
                   </div>
-                </>
+                </div>
               )}
             </motion.div>
           )}
         </AnimatePresence>
 
         {!currentMeal && !isSpinning && (
-          <p className="text-center text-slate-400 text-sm pt-2">
+          <p className="text-center text-sm" style={{ color: '#aeaeb2' }}>
             条件を選んでボタンを押してください
           </p>
         )}
