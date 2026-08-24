@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "deploy": "npm run build && aws s3 sync dist/ s3://meshi-gacha-frontend --delete && aws cloudfront create-invalidation --distribution-id E1M7Z9I968VYIR --paths \"/*\""
+    "deploy": "bash scripts/deploy.sh"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",
