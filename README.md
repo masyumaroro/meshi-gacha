@@ -5,8 +5,9 @@
 「何食べよう…」で 10 分溶かすのをやめるための、献立抽選アプリです。
 気分（あっさり / こってり）と食事タイプ（自炊 / 外食 / コンビニ）をゆるく指定してボタンを押すと、条件に合う料理を 1 つランダムに提案します。自炊メニューにはレシピへのリンク付き。
 
-- **フロントエンド**: React + TypeScript + Vite（PWA 対応）
-- **バックエンド**: Spring Boot + Spring Data JPA + H2
+- **フロントエンド**: React + TypeScript + Vite（PWA 対応）→ AWS S3 + CloudFront で配信
+- **バックエンド**: Spring Boot + Spring Data JPA + H2 → Render でホスト
+- **公開 URL**: https://d1fvntswylid8u.cloudfront.net
 - **API**: https://meshi-gacha.onrender.com
 
 ---
@@ -15,10 +16,11 @@
 
 | 機能 | 説明 |
 | --- | --- |
-| 条件フィルタ | 「あっさり / こってり」「自炊 / 外食 / コンビニ」を選択。**どちらも未選択でも OK**（全メニューから抽選） |
-| トグル選択 | 選択済みのチップをもう一度押すと解除できます |
+| 条件フィルタ | 「あっさり / こってり」「自炊 / 外食 / コンビニ」をボタンで選択。**未選択でも OK**（全メニューから抽選） |
+| トグル選択 | 選択済みのボタンをもう一度押すと解除できます |
+| heaviness 範囲指定 | あっさり → heaviness 1〜2、こってり → 4〜5 の範囲で絞り込み |
 | ガチャ演出 | 抽選中はダミーの料理名が高速で切り替わり、約 1.2 秒後に結果が確定します |
-| レシピリンク | 自炊メニュー（`COOKING`）にレシピ URL がある場合、「作り方を見る」ボタンを表示します |
+| レシピリンク | 自炊メニュー（`COOKING`）にレシピ URL がある場合、リンクを表示します |
 | PWA | ホーム画面に追加してネイティブアプリのように使えます |
 
 ---
@@ -40,7 +42,7 @@
 - Spring Web MVC / Spring Data JPA
 - H2 Database（インメモリ）
 - Maven（Maven Wrapper 同梱）
-- Docker（マルチステージビルド）
+- Docker（マルチステージビルド、実行ステージは `eclipse-temurin:17-jre-jammy`）
 
 ---
 
@@ -48,10 +50,13 @@
 
 ```
 meshi-gacha/
+├── .github/workflows/
+│   └── keep-awake.yml              # Render スリープ防止（10分ごと ping）
 ├── back-end/demo/
 │   ├── src/main/java/com/example/demo/
 │   │   ├── DemoApplication.java        # エントリポイント
-│   │   ├── DataInitializer.java        # 起動時の初期メニュー投入
+│   │   ├── DataInitializer.java        # 起動時の初期メニュー投入（44件）
+│   │   ├── WebConfig.java              # CORS 設定（本番オリジン限定）
 │   │   ├── entity/Food.java            # 料理エンティティ
 │   │   ├── repository/FoodRepository.java
 │   │   └── controller/FoodController.java
@@ -59,9 +64,13 @@ meshi-gacha/
 │   ├── Dockerfile
 │   └── pom.xml
 └── front-end/frontend/
+    ├── scripts/
+    │   └── deploy.sh                   # S3 + CloudFront デプロイスクリプト
     ├── src/
     │   ├── App.tsx                     # 画面・ガチャロジック
+    │   ├── vite-env.d.ts               # 環境変数の型定義
     │   └── main.tsx
+    ├── .env.production                 # 本番 API URL（コミット対象）
     ├── vite.config.ts                  # PWA 設定を含む
     └── package.json
 ```
@@ -74,6 +83,7 @@ meshi-gacha/
 
 - Java 17 以上
 - Node.js 20 以上
+- AWS CLI（デプロイ時のみ）
 
 ### バックエンドの起動
 
@@ -82,9 +92,10 @@ cd back-end/demo
 ./mvnw spring-boot:run
 ```
 
-`http://localhost:8080` で起動します。初回起動時に `DataInitializer` が初期メニューを自動投入します。
+`http://localhost:8080` で起動します。初回起動時に `DataInitializer` が初期メニュー 44 件を自動投入します。
 
-H2 はインメモリ構成のため、**アプリを再起動するとデータはリセットされます**。中身は H2 コンソール（`http://localhost:8080/h2-console`、JDBC URL: `jdbc:h2:mem:testdb`）から確認できます。
+H2 はインメモリ構成のため、**アプリを再起動するとデータはリセットされます**。  
+H2 コンソール: `http://localhost:8080/h2-console`（JDBC URL: `jdbc:h2:mem:testdb`）
 
 #### Docker で起動する場合
 
@@ -104,10 +115,12 @@ npm run dev
 
 `http://localhost:5173` で起動します。
 
-接続先 API は `src/App.tsx` の `API_BASE_URL` で指定しています。ローカルのバックエンドに向ける場合は以下のように書き換えてください。
+接続先 API は環境変数 `VITE_API_BASE_URL` で切り替えます。  
+`.env.local`（Git 管理外）を作成してローカルのバックエンドに向けてください。
 
-```ts
-const API_BASE_URL = "http://localhost:8080";
+```bash
+# front-end/frontend/.env.local
+VITE_API_BASE_URL=http://localhost:8080
 ```
 
 ### その他のコマンド
@@ -116,6 +129,16 @@ const API_BASE_URL = "http://localhost:8080";
 npm run build     # 本番ビルド（型チェック + Vite build）
 npm run preview   # ビルド結果のプレビュー
 npm run lint      # ESLint
+npm run deploy    # ビルド → S3 アップロード → CloudFront キャッシュ削除
+```
+
+#### `npm run deploy` の準備
+
+`front-end/frontend/.env.deploy`（Git 管理外）を作成してください。
+
+```bash
+S3_BUCKET=meshi-gacha-frontend
+CF_DISTRIBUTION_ID=your-distribution-id
 ```
 
 ---
@@ -130,15 +153,17 @@ npm run lint      # ESLint
 
 | パラメータ | 型 | 説明 |
 | --- | --- | --- |
-| `heaviness` | Integer | 重さ。1（あっさり）〜 5（こってり） |
+| `heavinessMin` | Integer | 重さの下限（1〜5） |
+| `heavinessMax` | Integer | 重さの上限（1〜5） |
 | `sourceType` | String | `COOKING`（自炊） / `EAT_OUT`（外食） / `CONVENIENCE`（コンビニ） |
 
-パラメータを省略した場合は、その条件で絞り込みません。条件に合う料理が 1 件もない場合は空のレスポンスを返します。
+パラメータを省略した場合は、その条件で絞り込みません。  
+条件に合う料理が 1 件もない場合は **404** を返します。
 
 **リクエスト例**
 
 ```
-GET /api/foods/gacha?heaviness=5&sourceType=COOKING
+GET /api/foods/gacha?heavinessMin=4&heavinessMax=5&sourceType=COOKING
 ```
 
 **レスポンス例**
@@ -175,8 +200,8 @@ GET /api/foods/gacha?heaviness=5&sourceType=COOKING
 
 ## 📝 今後の予定
 
-- [ ] メニューの追加・編集 API（現状は初期データのみ）
-- [ ] 永続化 DB への移行（H2 インメモリ → PostgreSQL など）
-- [ ] CORS 設定を本番オリジンに限定（現状は `*` を許可）
+- [ ] 永続化 DB への移行（H2 インメモリ → PostgreSQL）
+- [ ] メニューの追加・編集 API（POST / PUT / DELETE）
+- [ ] Spring Boot を AWS（App Runner など）へ移行
 - [ ] 抽選履歴の保存と「最近出た料理は出にくくする」重み付け
-- [ ] `heaviness` の中間値（2〜4）を UI から選べるように
+- [ ] Cognito によるユーザー認証・自分だけのメニューリスト
