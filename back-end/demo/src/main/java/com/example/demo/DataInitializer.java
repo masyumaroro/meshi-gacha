@@ -20,7 +20,7 @@ public class DataInitializer implements CommandLineRunner {
             // あっさり (1)
             saveFood("冷やしうどん",       "和食",     1, "COOKING",      "コシのある麺をさっぱり。夏に最高。",                 "https://www.kikkoman.co.jp/homecook/theme/popular/hiyashiudon.html");
             saveFood("ざるそば",           "和食",     1, "EAT_OUT",      "江戸前風の濃いめつゆで、喉越しを楽しむ粋な一杯。",   null);
-            saveFood("そうめん",           "和食",     1, "COOKING",      "細くてつるっと。夏の定番。薬味たっぷりで。",          "https://delishkitchen.tv/recipes/218892481960567003");
+            saveFood("そうめん",           "和食",     1, "COOKING",      "細くてつるっと。夏の定番。薬味たっぷりで。",          "https://www.kikkoman.co.jp/homecook/theme/popular/soumen.html");
             saveFood("お茶漬け",           "和食",     1, "COOKING",      "サラサラっと食べられる。夜食にもぴったり。",          null);
             saveFood("冷ややっこ",         "和食",     1, "COOKING",      "ひんやり豆腐にしょうゆとねぎ。最高のシンプルさ。",    null);
             saveFood("春雨スープ",         "スープ",   1, "CONVENIENCE",  "低カロリーでヘルシー。夜食にも。",                   null);
@@ -30,7 +30,7 @@ public class DataInitializer implements CommandLineRunner {
 
             // やや軽め (2)
             saveFood("寿司",              "和食",     2, "EAT_OUT",      "たまには贅沢に。テイクアウトもアリ。",                null);
-            saveFood("冷しゃぶ",          "和食",     2, "COOKING",      "さっぱりポン酢でいただく。夏の主役。",                "https://delishkitchen.tv/recipes/137456019735438477");
+            saveFood("冷しゃぶ",          "和食",     2, "COOKING",      "さっぱりポン酢でいただく。夏の主役。",                "https://www.kikkoman.co.jp/homecook/search/recipe/00003461/index.html");
             saveFood("茶碗蒸し",          "和食",     2, "EAT_OUT",      "なめらかな食感とやさしいだしの香り。",                null);
             saveFood("おにぎり",          "軽食",     2, "CONVENIENCE",  "具材で選ぶ楽しさも。手軽なのに満足感あり。",          null);
             saveFood("鮭定食",            "和食",     2, "EAT_OUT",      "焼き鮭と白ご飯の黄金コンビ。",                       null);
@@ -43,8 +43,8 @@ public class DataInitializer implements CommandLineRunner {
             saveFood("ビビンバ",          "韓国料理", 3, "EAT_OUT",      "野菜たっぷりでヘルシーかつ満足感。",                  null);
             saveFood("シーフードヌードル","麺類",     3, "CONVENIENCE",  "困った時のカップ麺。お湯を入れるだけ。",              null);
             saveFood("チャーハン",        "中華",     3, "EAT_OUT",      "パラパラ炒飯。シンプルなのに飽きない味。",            null);
-            saveFood("ナポリタン",        "洋食",     3, "COOKING",      "ケチャップの甘酸っぱさが懐かしい。",                  "https://delishkitchen.tv/recipes/152198282838049023");
-            saveFood("肉じゃが",          "和食",     3, "COOKING",      "ほっくりじゃがいもと甘辛い煮汁。おふくろの味。",      "https://delishkitchen.tv/recipes/155350820946485518");
+            saveFood("ナポリタン",        "洋食",     3, "COOKING",      "ケチャップの甘酸っぱさが懐かしい。",                  "https://www.kikkoman.co.jp/homecook/search/recipe/00002743/index.html");
+            saveFood("肉じゃが",          "和食",     3, "COOKING",      "ほっくりじゃがいもと甘辛い煮汁。おふくろの味。",      "https://www.kikkoman.co.jp/homecook/search/recipe/00003034/index.html");
             saveFood("唐揚げ定食",        "和食",     3, "EAT_OUT",      "ジューシーな揚げたて。ご飯が進む。",                  null);
             saveFood("たこ焼き",          "軽食",     3, "EAT_OUT",      "外はカリ、中はとろり。ソースとマヨが最高。",          null);
             saveFood("カレーライス",      "カレー",   3, "COOKING",      "スパイスが食欲をそそる。定番の家カレー。",            "https://delishkitchen.tv/recipes/154777327985475750");
@@ -65,10 +65,10 @@ public class DataInitializer implements CommandLineRunner {
             saveFood("カツカレー",        "カレー",   5, "COOKING",      "サクサクのカツと濃厚ルー。ご褒美に。",                "https://delishkitchen.tv/recipes/184129806885979263");
             saveFood("とんこつラーメン",  "ラーメン", 5, "EAT_OUT",      "濃厚スープが極細麺に絡む。替え玉必至の一杯。",        null);
             saveFood("ハンバーグ",        "洋食",     5, "EAT_OUT",      "肉汁あふれるジューシーな一品。",                      null);
-            saveFood("バターチキンカレー","カレー",   5, "COOKING",      "濃厚なトマトとバターのコク。スパイスが食欲全開に。",  "https://delishkitchen.tv/recipes/152553592178279685");
+            saveFood("バターチキンカレー","カレー",   5, "COOKING",      "濃厚なトマトとバターのコク。スパイスが食欲全開に。",  "https://www.kikkoman.co.jp/homecook/search/recipe/00003803/index.html");
             saveFood("二郎系ラーメン",    "ラーメン", 5, "EAT_OUT",      "野菜マシマシ。ガッツリ食べたい日の最終兵器。",        null);
             saveFood("チーズタッカルビ",  "韓国料理", 5, "EAT_OUT",      "チーズと甘辛タレがとろける。鍋を囲む幸せ。",          null);
-            saveFood("クリームシチュー",  "洋食",     5, "COOKING",      "とろりとしたホワイトソースに野菜がほっくり。",         "https://delishkitchen.tv/recipes/152847987929498847");
+            saveFood("クリームシチュー",  "洋食",     5, "COOKING",      "とろりとしたホワイトソースに野菜がほっくり。",         "https://www.kikkoman.co.jp/homecook/search/recipe/00000673/index.html");
         }
     }
 
