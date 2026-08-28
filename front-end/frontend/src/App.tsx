@@ -57,23 +57,25 @@ export default function App() {
     }
     if (selectedType) params.append('sourceType', SOURCE_TYPE_MAP[selectedType]);
 
+    // アニメーションを即座に開始
+    const intervalId = setInterval(() => {
+      setDisplayText(dummyFoods[Math.floor(Math.random() * dummyFoods.length)]);
+    }, 80);
+
     try {
-      const response = await fetch(`${API_BASE_URL}/api/foods/gacha?${params.toString()}`);
+      const [response] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/foods/gacha?${params.toString()}`),
+        new Promise(resolve => setTimeout(resolve, 1200)), // 最低1.2秒はアニメーション
+      ]);
       if (response.status === 404) throw new Error('not_found');
       if (!response.ok) throw new Error('server_error');
       const result = await response.json();
 
-      let count = 0;
-      const interval = setInterval(() => {
-        setDisplayText(dummyFoods[Math.floor(Math.random() * dummyFoods.length)]);
-        count++;
-        if (count > 15) {
-          clearInterval(interval);
-          setCurrentMeal(result);
-          setIsSpinning(false);
-        }
-      }, 80);
+      clearInterval(intervalId);
+      setCurrentMeal(result);
+      setIsSpinning(false);
     } catch (error) {
+      clearInterval(intervalId);
       const msg = error instanceof Error && error.message === 'server_error'
         ? 'サーバーエラーが発生しました。'
         : '条件に合う料理が見つかりませんでした。';

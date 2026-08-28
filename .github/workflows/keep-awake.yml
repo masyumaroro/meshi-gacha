@@ -2,8 +2,9 @@ name: Keep Render Awake
 
 on:
   schedule:
-    - cron: '*/10 * * * *'  # 10分ごとに実行（Renderは15分でスリープ）
-  workflow_dispatch:          # 手動実行も可能
+    # GitHub cronの遅延対策として複数時刻に分散（*/10は遅延しやすい）
+    - cron: '0,10,20,30,40,50 * * * *'
+  workflow_dispatch:
 
 jobs:
   ping:
@@ -12,9 +13,12 @@ jobs:
       - name: Ping backend
         run: |
           echo "Pinging Render backend..."
-          curl -sf https://meshi-gacha.onrender.com/api/foods/gacha \
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             --max-time 30 \
-            --retry 2 \
-            -o /dev/null \
-            -w "HTTP %{http_code} in %{time_total}s\n" \
-            || echo "Ping returned non-2xx (may be no matching food, but server is awake)"
+            https://meshi-gacha.onrender.com/api/foods/gacha)
+          echo "HTTP status: $STATUS"
+          if [ "$STATUS" = "000" ]; then
+            echo "ERROR: No response (server may still be sleeping)"
+            exit 1
+          fi
+          echo "Server is awake"
